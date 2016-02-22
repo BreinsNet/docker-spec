@@ -21,4 +21,14 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.10"
   spec.add_development_dependency "rake", "~> 10.0"
+
+  spec.add_dependency 'serverspec'
+  spec.add_dependency 'docker-api'
+  spec.add_dependency 'pry'
+  spec.add_dependency 'timeout'
+  spec.add_dependency 'highline'
+  spec.add_dependency 'popen4'
+  spec.add_dependency 'colorize'
+  spec.add_dependency 'logger'
+  spec.add_dependency 'moneta'
 end
