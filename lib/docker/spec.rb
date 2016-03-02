@@ -10,6 +10,7 @@ require 'colorize'
 require 'yaml'
 require 'logger'
 require 'moneta'
+require "base64"
 require 'pp'
 
 # Documentation
@@ -17,6 +18,7 @@ module DockerSpec
   CONTAINER_RUN_WAIT_TIMEOUT = 60
   CONFIG_FILE = 'docker_spec.yml'
   ROOT_DIR = 'root'
+  DOCKER_AUTH_FILE = '~/.docker/config.json'
   STDOUT.sync = true
 
   def self.run
@@ -28,19 +30,28 @@ module DockerSpec
 
   def self.push
     @config[:push_container] = DockerSpec.get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
-                                                     'Push new tag? ')
+                                                     "\nPush new tag? ")
     if @config[:push_container]
 
       @config[:tag_db] ||
         fail('tag_db is not defined in docker_spec.yml')
-      @config[:dockerhub] ||
-        fail('dockerhub is not defined in docker_spec.yml')
-      @config[:dockerhub][:username] ||
-        fail('dockerhub->username is not defined in docker_spec.yml')
-      @config[:dockerhub][:password] ||
-        fail('dockerhub->password is not defined in docker_spec.yml')
-      @config[:dockerhub][:email] ||
-        fail('dockerhub->email is not defined in docker_spec.yml')
+
+      # Load credentials from config file, or default docker config
+      if @config[:dockerhub]
+        @config[:dockerhub][:username] ||
+          fail('dockerhub->username is not defined in docker_spec.yml')
+        @config[:dockerhub][:password] ||
+          fail('dockerhub->password is not defined in docker_spec.yml')
+        @config[:dockerhub][:email] ||
+          fail('dockerhub->email is not defined in docker_spec.yml')
+      else
+        @config[:dockerhub] = Hash.new
+        docker_auth = JSON.parse(File.read(File.expand_path(DOCKER_AUTH_FILE)))
+        auth_base64 = docker_auth['auths']['https://index.docker.io/v1/']['auth']
+        @config[:dockerhub][:username] = Base64.decode64(auth_base64).split(':').first
+        @config[:dockerhub][:password] = Base64.decode64(auth_base64).split(':').last
+        @config[:dockerhub][:email] = docker_auth['auths']['https://index.docker.io/v1/']['email']
+      end
 
       # Open key value store and get the current tag for this repo
       store = Moneta.new(:YAML, file: @config[:tag_db])
