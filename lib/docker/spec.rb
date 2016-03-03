@@ -182,8 +182,8 @@ module DockerSpec
 
   def self.get_config(key, envvar, question)
     value = to_boolean(ENV[envvar])
-    value ||= @config[key]
-    value ||= agree(question, 'n') if value.nil?
+    value = @config[key] if value.nil?
+    value = agree(question, 'n') if value.nil?
     value
   end
 
