@@ -54,7 +54,7 @@ module DockerSpec
       end
 
       # Open key value store and get the current tag for this repo
-      store = Moneta.new(:YAML, file: @config[:tag_db])
+      store = Moneta.new(:YAML, file: File.expand_path(@config[:tag_db]))
       current_tag = store.key?(@config[:image_name]) ? store[@config[:image_name]].to_i : 0
       new_tag = current_tag + 1
 
