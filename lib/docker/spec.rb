@@ -10,27 +10,36 @@ require 'colorize'
 require 'yaml'
 require 'logger'
 require 'moneta'
-require "base64"
+require 'base64'
+require 'singleton'
 require 'pp'
 
 # Documentation
-module DockerSpec
+class DockerSpec
+
+  include Singleton
+
+  attr_accessor :config, :test_failed
+
   CONTAINER_RUN_WAIT_TIMEOUT = 60
   CONFIG_FILE = 'docker_spec.yml'
   ROOT_DIR = 'root'
   DOCKER_AUTH_FILE = '~/.docker/config.json'
   STDOUT.sync = true
 
-  def self.run
+  def run
+    @config = nil
+    @test_failed = false
+
     load_config
     build_root if @config[:build_root]
-    build_docker_image
-    rspec_run
+    build_docker_image if @config[:build_image]
+    rspec_configure
   end
 
-  def self.push
-    @config[:push_container] = DockerSpec.get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
-                                                     "\nPush new tag? ")
+  def push
+    @config[:push_container] = get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
+                                                     'Push new tag? ')
     if @config[:push_container]
 
       @config[:tag_db] ||
@@ -81,7 +90,7 @@ module DockerSpec
     end
   end
 
-  def self.load_config
+  def load_config
     File.exist?(CONFIG_FILE) || fail('Could not load docker_spec.yml')
     @config = YAML.load(File.read(CONFIG_FILE)) ||
               fail('docker_spec.yml is not a valid yml file')
@@ -90,21 +99,24 @@ module DockerSpec
     @config[:account] || fail('account is not defined in docker_spec.yml')
     @config[:image_name] = format '%s/%s', @config[:account], @config[:name]
     @config[:container_name] = format 'docker_spec-%s', @config[:name]
-    @config[:build_root] = DockerSpec.get_config(:build_root, 'DOCKER_SPEC_BUILD_ROOT',
-                                                 'Rebuild root filesystem? ')
-    @config[:clear_cache] = DockerSpec.get_config(:clear_cache, 'DOCKER_SPEC_CLEAR_CACHE',
-                                                  'Clear docker cache? ')
+    @config[:build_image] = get_config(:build_image, 'DOCKER_SPEC_BUILD_',
+                                       'Build docker image? ')
+    @config[:build_root] = get_config(:build_root, 'DOCKER_SPEC_BUILD_ROOT',
+                                      'Rebuild root filesystem? ') if @config[:build_image]
+    @config[:clear_cache] = get_config(:clear_cache, 'DOCKER_SPEC_CLEAR_CACHE',
+                                       'Clear docker cache? ') if @config[:build_image]
     @config
   end
 
-  def self.build_root
+  def build_root
     system 'bash -ec \'sudo chown root:root -R root &&' \
            '(cd root && sudo tar zcf ../root.tar.gz .) && ' \
            'sudo chown -R `id -u`:`id -g` root.tar.gz root\'' \
            if Dir.exist?(ROOT_DIR)
   end
 
-  def self.build_docker_image
+  def build_docker_image
+    puts
     # Rebuild the cache filesystem
     build_args = ''
     build_args += ' --no-cache' if @config[:clear_cache]
@@ -118,26 +130,30 @@ module DockerSpec
     fail("#{build_cmd} failed") if status.exitstatus != 0
   end
 
-  def self.rspec_run
+  def rspec_configure
     set :backend, :docker
 
     RSpec.configure do |rc|
       rc.fail_fast = true
 
+      rc.after(:each) do |test|
+        DockerSpec.instance.test_failed = true if test.exception
+      end
+
       rc.before(:suite) do
-        DockerSpec.delete_container
-        DockerSpec.start_container
+        DockerSpec.instance.delete_container
+        DockerSpec.instance.start_container
       end
 
       rc.after(:suite) do
-        DockerSpec.clean_up
-        DockerSpec.push
+        DockerSpec.instance.clean_up
+        DockerSpec.instance.push unless DockerSpec.instance.test_failed
       end
     end
-    docker_tests
+    Docker::Spec::docker_tests
   end
 
-  def self.start_container
+  def start_container
     # Run  the container with options
     opts = {}
     opts['HostConfig'] = { 'NetworkMode' => @config[:network_mode] } \
@@ -160,7 +176,7 @@ module DockerSpec
     set :docker_container, container.id
   end
 
-  def self.delete_container
+  def delete_container
     filters = { name: [@config[:container_name]] }.to_json
     Docker::Container.all(all: true, filters: filters).each do |c|
       c.kill
@@ -168,10 +184,10 @@ module DockerSpec
     end
   end
 
-  def self.clean_up
+  def clean_up
     # Keep container running
-    @config[:keep_running] = DockerSpec.get_config(:keep_running, 'DOCKER_SPEC_KEEP_RUNNING',
-                                                   'Keep container running? ')
+    @config[:keep_running] = get_config(:keep_running, 'DOCKER_SPEC_KEEP_RUNNING',
+                                                   "\nKeep container running? ")
     if @config[:keep_running]
       puts "\nINFO: To connect to a running container: \n\n" \
         "docker exec -ti #{@config[:container_name]} bash"
@@ -180,14 +196,14 @@ module DockerSpec
     end
   end
 
-  def self.get_config(key, envvar, question)
+  def get_config(key, envvar, question)
     value = to_boolean(ENV[envvar])
     value = @config[key] if value.nil?
     value = agree(question, 'n') if value.nil?
     value
   end
 
-  def self.to_boolean(str)
+  def to_boolean(str)
     str == 'true' unless str.nil?
   end
 end
