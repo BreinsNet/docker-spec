@@ -99,7 +99,7 @@ class DockerSpec
     @config[:account] || fail('account is not defined in docker_spec.yml')
     @config[:image_name] = format '%s/%s', @config[:account], @config[:name]
     @config[:container_name] = format 'docker_spec-%s', @config[:name]
-    @config[:build_image] = get_config(:build_image, 'DOCKER_SPEC_BUILD_',
+    @config[:build_image] = get_config(:build_image, 'DOCKER_SPEC_BUILD_DOCKER_IMAGE',
                                        'Build docker image? ')
     @config[:build_root] = get_config(:build_root, 'DOCKER_SPEC_BUILD_ROOT',
                                       'Rebuild root filesystem? ') if @config[:build_image]
