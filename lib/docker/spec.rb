@@ -109,10 +109,16 @@ class DockerSpec
   end
 
   def build_root
-    system 'bash -ec \'sudo chown root:root -R root &&' \
-           '(cd root && sudo tar zcf ../root.tar.gz .) && ' \
-           'sudo chown -R `id -u`:`id -g` root.tar.gz root\'' \
-           if Dir.exist?(ROOT_DIR)
+    command = <<EOF
+bash -ec 'export WD=$(pwd) && export TMPDIR=$(mktemp -d -t docker-spec.XXXXXX) && 
+cp -r root $TMPDIR/root && cd $TMPDIR && 
+sudo chown root:root -R root && 
+(cd root && sudo tar zcf ../root.tar.gz .) && 
+sudo chown -R `id -u`:`id -g` root.tar.gz && 
+cp root.tar.gz $WD &&
+sudo  rm -rf $TMPDIR'
+EOF
+    system command if Dir.exist?(ROOT_DIR)
   end
 
   def build_docker_image
