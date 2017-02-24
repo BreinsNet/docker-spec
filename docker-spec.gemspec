@@ -25,7 +25,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'serverspec'
   spec.add_dependency 'docker-api'
   spec.add_dependency 'pry'
-  spec.add_dependency 'timeout'
   spec.add_dependency 'highline'
   spec.add_dependency 'popen4'
   spec.add_dependency 'colorize'
