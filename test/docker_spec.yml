@@ -1,0 +1,6 @@
+---
+:account: none
+:name: test
+:tag_db: '~/resources/docker_tags_db.yml'
+:env:
+  - "TEST_ENV=Test"

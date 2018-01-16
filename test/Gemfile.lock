@@ -1,0 +1,77 @@
+PATH
+  remote: ..
+  specs:
+    docker-spec (0.8.1)
+      colorize
+      docker-api
+      highline
+      logger
+      moneta
+      popen4
+      pry
+      serverspec
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    Platform (0.4.0)
+    coderay (1.1.2)
+    colorize (0.8.1)
+    diff-lcs (1.3)
+    docker-api (1.34.0)
+      excon (>= 0.47.0)
+      multi_json
+    excon (0.59.0)
+    highline (1.7.8)
+    logger (1.2.8)
+    method_source (0.9.0)
+    moneta (1.0.0)
+    multi_json (1.12.2)
+    net-scp (1.2.1)
+      net-ssh (>= 2.6.5)
+    net-ssh (4.2.0)
+    net-telnet (0.1.1)
+    open4 (1.3.4)
+    popen4 (0.1.2)
+      Platform (>= 0.4.0)
+      open4 (>= 0.4.0)
+    pry (0.11.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    rspec (3.5.0)
+      rspec-core (~> 3.5.0)
+      rspec-expectations (~> 3.5.0)
+      rspec-mocks (~> 3.5.0)
+    rspec-core (3.5.4)
+      rspec-support (~> 3.5.0)
+    rspec-expectations (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-its (1.2.0)
+      rspec-core (>= 3.0.0)
+      rspec-expectations (>= 3.0.0)
+    rspec-mocks (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-support (3.5.0)
+    serverspec (2.41.3)
+      multi_json
+      rspec (~> 3.0)
+      rspec-its
+      specinfra (~> 2.72)
+    sfl (2.3)
+    specinfra (2.72.1)
+      net-scp
+      net-ssh (>= 2.7, < 5.0)
+      net-telnet
+      sfl
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  docker-spec!
+  rspec
+
+BUNDLED WITH
+   1.15.4

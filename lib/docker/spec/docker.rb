@@ -1,15 +1,10 @@
 module Docker
   module Spec
     def self.docker_tests
-      describe 'Running a docker container' do
+      describe 'Running a docker container', test: :default do
         before(:all) do
-          @config = DockerSpec.instance.config
-          @image = Docker::Image.all.detect do |i|
-            i.info['RepoTags'].include?(@config[:image_name] + ':latest')
-          end
-          @container = Docker::Container.all.select do |c|
-            c.info["Names"] == [ "/" + @config[:container_name] ]
-          end.first
+          @container = DockerSpec.instance.container
+          @image = @container.info["Image"]
         end
 
         it 'should be available' do

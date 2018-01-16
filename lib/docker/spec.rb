@@ -18,7 +18,7 @@ class DockerSpec
 
   include Singleton
 
-  attr_accessor :config, :test_failed
+  attr_accessor :config, :test_failed, :container
 
   CONTAINER_RUN_WAIT_TIMEOUT = 60
   CONFIG_FILE = 'docker_spec.yml'
@@ -97,7 +97,6 @@ class DockerSpec
     @config[:name] || fail('name is not defined in docker_spec.yml')
     @config[:account] || fail('account is not defined in docker_spec.yml')
     @config[:image_name] = format '%s/%s', @config[:account], @config[:name]
-    @config[:container_name] = format 'docker_spec-%s', @config[:name]
     @config[:build_image] = get_config(:build_image, 'DOCKER_SPEC_BUILD_DOCKER_IMAGE',
                                        'Build docker image? ')
     @config[:build_root] = get_config(:build_root, 'DOCKER_SPEC_BUILD_ROOT',
@@ -146,7 +145,6 @@ EOF
       end
 
       rc.before(:suite) do
-        DockerSpec.instance.delete_container
         DockerSpec.instance.start_container
       end
 
@@ -166,27 +164,30 @@ EOF
 
     opts['env'] = @config[:env] unless @config[:env].nil?
     opts['Image'] = @config[:image_name]
-    opts['name'] = @config[:container_name]
-    container = Docker::Container.create(opts).start
+    @container = Docker::Container.create(opts).start
+    Timeout::timeout(10) do
+      loop do
+        @container.refresh! 
+        break if @container.info["State"]["Running"]
+      end
+    end
+
 
     # Check the logs, when it stops logging we can assume the container
     # is fully up and running
     log_size_ary = []
     CONTAINER_RUN_WAIT_TIMEOUT.times do
-      log_size_ary << container.logs(stdout: true).size
+      log_size_ary << @container.logs(stdout: true).size
       break if log_size_ary.last(3).sort.uniq.size == 1 &&
                log_size_ary.last(3).sort.uniq.last > 0
       sleep 1
     end
-    set :docker_container, container.id
+    set :docker_container, @container.id
   end
 
   def delete_container
-    filters = { name: [@config[:container_name]] }.to_json
-    Docker::Container.all(all: true, filters: filters).each do |c|
-      c.kill
-      c.delete
-    end
+    @container.kill
+    @container.delete
   end
 
   def clean_up
@@ -195,7 +196,7 @@ EOF
                                                    "\nKeep container running? ")
     if @config[:keep_running]
       puts "\nINFO: To connect to a running container: \n\n" \
-        "docker exec -ti #{@config[:container_name]} bash"
+        "docker exec -ti #{@container.info["Name"][1..-1]} bash"
     else
       delete_container
     end
