@@ -5,13 +5,6 @@ module Docker
         before(:all) do
           @container = DockerSpec.instance.container
           @image = @container.info["Image"]
-          @config = DockerSpec.instance.config
-          @lock = File.join('/tmp', @config[:account] + '-' + @config[:name] + '.lock')
-          @f = File.open(@lock, 'w')
-          if (not @f.flock(File::LOCK_EX | File::LOCK_NB))
-            puts "INFO: Another build is already running"
-          end
-          @f.flock(File::LOCK_EX)
         end
 
         it 'should be available' do

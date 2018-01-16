@@ -31,9 +31,20 @@ class DockerSpec
     @test_failed = false
 
     load_config
+    flock
     build_root if @config[:build_root]
     build_docker_image if @config[:build_image]
     rspec_configure
+  end
+
+  def flock
+    @config = DockerSpec.instance.config
+    @lock = File.join('/tmp', @config[:account] + '-' + @config[:name] + '.lock')
+    @f = File.open(@lock, 'w')
+    if (not @f.flock(File::LOCK_EX | File::LOCK_NB))
+      puts "INFO: Another build is already running"
+    end
+    @f.flock(File::LOCK_EX)
   end
 
   def push
