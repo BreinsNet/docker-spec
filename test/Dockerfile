@@ -1,5 +1,6 @@
 # Base image to build from
 FROM juanbrein/base
+LABEL Name="doris"
 
 # Mantainer:
 MAINTAINER Breinlinger Juan Paulo <juan.brein@breins.net>
