@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    docker-spec (0.10.0)
+    docker-spec (0.11.0)
       colorize
       docker-api
       highline
