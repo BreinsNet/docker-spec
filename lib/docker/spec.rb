@@ -119,12 +119,12 @@ class DockerSpec
 
   def build_root
     command = <<EOF
-bash -ec 'export WD=$(pwd) && export TMPDIR=$(mktemp -d -t docker-spec.XXXXXX) && 
-cp -r root $TMPDIR/root && cd $TMPDIR && 
-sudo chown root:root -R root && 
-(cd root && sudo tar zcf ../root.tar.gz .) && 
-sudo chown -R `id -u`:`id -g` root.tar.gz && 
-cp root.tar.gz $WD &&
+bash -ec 'export WD=$(pwd) && export TMPDIR=$(mktemp -d -t docker-spec.XXXXXX) &&
+cp -r root $TMPDIR/root && cd $TMPDIR &&
+sudo chown root:root -R root &&
+(cd root && sudo tar cf ../root.tar .) &&
+sudo chown -R `id -u`:`id -g` root.tar &&
+cp root.tar $WD &&
 sudo  rm -rf $TMPDIR'
 EOF
     system command if Dir.exist?(ROOT_DIR)
@@ -178,7 +178,7 @@ EOF
     @container = Docker::Container.create(opts).start
     Timeout::timeout(10) do
       loop do
-        @container.refresh! 
+        @container.refresh!
         break if @container.info["State"]["Running"]
       end
     end
