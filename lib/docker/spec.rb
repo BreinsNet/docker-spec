@@ -124,7 +124,7 @@ cp -r root $TMPDIR/root && cd $TMPDIR &&
 sudo chown root:root -R root &&
 (cd root && sudo tar cf ../root.tar .) &&
 sudo chown -R `id -u`:`id -g` root.tar &&
-cp root.tar $WD && touch -t 200001010000.00 root.tar &&
+cp root.tar $WD && touch -t 200001010000.00 $WD/root.tar &&
 sudo rm -rf $TMPDIR'
 EOF
     system command if Dir.exist?(ROOT_DIR)
