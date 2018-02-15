@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV HOME /root
 
 # Add all the files
-ADD root.tar.gz /
+ADD root.tar /
 
 # Run it:
 CMD ["/start.sh"]

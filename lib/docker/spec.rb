@@ -31,18 +31,18 @@ class DockerSpec
     @test_failed = false
 
     load_config
-    flock
+    grab_flock
     build_root if @config[:build_root]
     build_docker_image if @config[:build_image]
     rspec_configure
   end
 
-  def flock
+  def grab_flock
     @config = DockerSpec.instance.config
     @lock = File.join('/tmp', @config[:account] + '-' + @config[:name] + '.lock')
     @f = File.open(@lock, 'w')
     if (not @f.flock(File::LOCK_EX | File::LOCK_NB))
-      puts "INFO: Another build is already running"
+      puts "INFO: Another build is already running #{@lock}"
     end
     @f.flock(File::LOCK_EX)
   end
@@ -150,7 +150,10 @@ EOF
       stdout.each { |line| puts line }
       stderr.each { |line| puts line.red }
     end
-    fail("#{build_cmd} failed") if status.exitstatus != 0
+    if status.exitstatus != 0
+      puts("ERROR: #{build_cmd} failed")
+      exit 1
+    end
   end
 
   def rspec_configure
