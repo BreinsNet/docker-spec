@@ -56,20 +56,21 @@ class DockerSpec
         fail('tag_db is not defined in docker_spec.yml')
 
       # Load credentials from config file, or default docker config
-      if @config[:dockerhub]
-        @config[:dockerhub][:username] ||
-          fail('dockerhub->username is not defined in docker_spec.yml')
-        @config[:dockerhub][:password] ||
-          fail('dockerhub->password is not defined in docker_spec.yml')
-        @config[:dockerhub][:email] ||
-          fail('dockerhub->email is not defined in docker_spec.yml')
+      if @config[:registry]
+        @config[:registry][:username] ||
+          fail('registry->username is not defined in docker_spec.yml')
+        @config[:registry][:password] ||
+          fail('registry->password is not defined in docker_spec.yml')
+        @config[:registry][:email] ||
+          fail('registry->email is not defined in docker_spec.yml')
       else
-        @config[:dockerhub] = Hash.new
+        auth = @config[:auth] || 'https://index.docker.io/v1/'
+        @config[:registry] = Hash.new
         docker_auth = JSON.parse(File.read(File.expand_path(DOCKER_AUTH_FILE)))
-        auth_base64 = docker_auth['auths']['https://index.docker.io/v1/']['auth']
-        @config[:dockerhub][:username] = Base64.decode64(auth_base64).split(':').first
-        @config[:dockerhub][:password] = Base64.decode64(auth_base64).split(':').last
-        @config[:dockerhub][:email] = docker_auth['auths']['https://index.docker.io/v1/']['email']
+        auth_base64 = docker_auth['auths'][auth]['auth']
+        @config[:registry][:username] = Base64.decode64(auth_base64).split(':').first
+        @config[:registry][:password] = Base64.decode64(auth_base64).split(':').last
+        @config[:registry][:email] = docker_auth['auths'][auth]['email']
       end
 
       # Open key value store and get the current tag for this repo
@@ -82,9 +83,10 @@ class DockerSpec
       end
 
       # Login to docker hub and push latest and new_tag
-      Docker.authenticate! username: @config[:dockerhub][:username],
-                           password: @config[:dockerhub][:password],
-                           email: @config[:dockerhub][:email]
+      Docker.authenticate! username: @config[:registry][:username],
+                           password: @config[:registry][:password],
+                           email: @config[:registry][:email],
+                           serveraddress: @config[:serveraddress] || 'https://index.docker.io'
 
       image.tag repo: @config[:image_name], tag: new_tag, force: true
       puts "\nINFO: pushing #{@config[:image_name]}:#{new_tag} to DockerHub"
