@@ -27,6 +27,7 @@ module Docker
           if @container.logs(stdout: true).match(/exit/)
             logs = command('cat /var/log/supervisor/*').stdout
             File.open('supervisor-err.log', 'w+').write logs
+            puts logs
           end
           expect(@container.logs(stdout: true)).to_not match(/exit/)
         end
