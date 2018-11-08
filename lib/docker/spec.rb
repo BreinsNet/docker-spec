@@ -116,6 +116,7 @@ class DockerSpec
                                       'Rebuild root filesystem? ') if @config[:build_image]
     @config[:clear_cache] = get_config(:clear_cache, 'DOCKER_SPEC_CLEAR_CACHE',
                                        'Clear docker cache? ') if @config[:build_image]
+    @config[:tag_db] = get_config(:tag_db, 'DOCKER_SPEC_TAG_DB', 'tag db?')
     @config
   end
 
