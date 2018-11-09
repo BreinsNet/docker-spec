@@ -77,7 +77,7 @@ class DockerSpec
       tag_prefix = @config[:tag_prefix]
       store = Moneta.new(:YAML, file: File.expand_path(@config[:tag_db]))
       current_tag = store.key?(@config[:image_name]) ? 
-        store[@config[:image_name]].match(/#{tag_prefix}(.*)/)[1].to_i : 0
+        store[@config[:image_name]].to_s.match(/#{tag_prefix}(.*)/)[1].to_i : 0
       new_tag = tag_prefix + (current_tag + 1).to_s
 
       image = Docker::Image.all.detect do |i|
