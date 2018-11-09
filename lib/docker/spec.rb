@@ -74,9 +74,11 @@ class DockerSpec
       end
 
       # Open key value store and get the current tag for this repo
+      tag_prefix = @config[:tag_prefix]
       store = Moneta.new(:YAML, file: File.expand_path(@config[:tag_db]))
-      current_tag = store.key?(@config[:image_name]) ? store[@config[:image_name]].to_i : 0
-      new_tag = current_tag + 1
+      current_tag = store.key?(@config[:image_name]) ? 
+        store[@config[:image_name]].match(/#{tag_prefix}(.*)/)[1].to_i : 0
+      new_tag = tag_prefix + (current_tag + 1).to_s
 
       image = Docker::Image.all.detect do |i|
         i.info['RepoTags'].include?(@config[:image_name] + ':latest')
@@ -97,7 +99,7 @@ class DockerSpec
       image.push nil, tag: 'latest'
 
       # Store the new tag in the tag_db
-      store[@config[:image_name]] = new_tag
+      store[@config[:image_name]] = new_tag.to_s
       store.close
     end
   end
@@ -117,6 +119,7 @@ class DockerSpec
     @config[:clear_cache] = get_config(:clear_cache, 'DOCKER_SPEC_CLEAR_CACHE',
                                        'Clear docker cache? ') if @config[:build_image]
     @config[:tag_db] = get_config(:tag_db, 'DOCKER_SPEC_TAG_DB', 'tag db?')
+    @config[:tag_prefix] = get_config(:tag_prefix, 'DOCKER_SPEC_TAG_PREFIX', 'tag prefix?', '')
     @config
   end
 
@@ -227,10 +230,14 @@ EOF
     end
   end
 
-  def get_config(key, envvar, question)
-    value = to_boolean(ENV[envvar])
+  def get_config(key, envvar, question, default = nil)
+    value = ENV[envvar]
+    value = true if value.class == String && value.match(/^(true|yes|y)$/i)
+    value = false if value.class == String && value.match(/^(false|no|n)$/i)
     value = @config[key] if value.nil?
-    value = agree(question, 'n') if value.nil?
+    if value.nil?
+      value = default.nil? ? agree(question, 'n') : default
+    end
     value
   end
 
