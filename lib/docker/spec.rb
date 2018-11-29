@@ -31,7 +31,7 @@ class DockerSpec
     @test_failed = false
 
     load_config
-    grab_flock
+    grab_flock if @config[:lock]
     build_root if @config[:build_root]
     build_docker_image if @config[:build_image]
     rspec_configure
@@ -39,7 +39,7 @@ class DockerSpec
 
   def grab_flock
     @config = DockerSpec.instance.config
-    @lock = File.join('/tmp', @config[:account] + '-' + @config[:name] + '.lock')
+    @lock = File.join('/tmp', @config[:account] + '-' + @config[:name].gsub('/', '-') + '.lock')
     @f = File.open(@lock, 'w')
     if (not @f.flock(File::LOCK_EX | File::LOCK_NB))
       puts "INFO: Another build is already running #{@lock}"
