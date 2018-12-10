@@ -49,7 +49,7 @@ class DockerSpec
 
   def push
     @config[:push_container] = get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
-                                                     'Push new tag? ')
+                                          'Push new tag? ')
     if @config[:push_container]
 
       @config[:tag_db] ||
@@ -91,11 +91,12 @@ class DockerSpec
                            serveraddress: @config[:serveraddress] || 'https://index.docker.io'
 
       image.tag repo: @config[:image_name], tag: new_tag, force: true
-      puts "\nINFO: pushing #{@config[:image_name]}:#{new_tag} to DockerHub"
+      puts "\nINFO: pushing #{@config[:image_name]}:#{new_tag} to Registry"
+      binding.pry
       image.push nil, tag: new_tag
 
       image.tag repo: @config[:image_name], tag: 'latest', force: true
-      puts "INFO: pushing #{@config[:image_name]}:latest to DockerHub"
+      puts "INFO: pushing #{@config[:image_name]}:latest to Registry"
       image.push nil, tag: 'latest'
 
       # Store the new tag in the tag_db
@@ -126,17 +127,17 @@ class DockerSpec
   def build_root
     command = <<EOF
 bash -ec '
-  export WD=$(pwd) 
+  export WD="$(pwd)"
   export TMPDIR=$(mktemp -d -t docker-spec.XXXXXX)
   
-  cp -r root $TMPDIR/root 
+  cp -r root $TMPDIR/root
   cd $TMPDIR
   sudo chown root:root -R root
   cd root 
   sudo tar --mtime="1970-01-01" -c -f ../root.tar .
   cd ../
   sudo chown -R `id -u`:`id -g` root.tar
-  cp root.tar $WD 
+  cp root.tar "${WD}"
   touch -t 200001010000.00 $WD/root.tar
   sudo rm -rf $TMPDIR
 '
