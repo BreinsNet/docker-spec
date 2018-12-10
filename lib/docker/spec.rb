@@ -92,7 +92,6 @@ class DockerSpec
 
       image.tag repo: @config[:image_name], tag: new_tag, force: true
       puts "\nINFO: pushing #{@config[:image_name]}:#{new_tag} to Registry"
-      binding.pry
       image.push nil, tag: new_tag
 
       image.tag repo: @config[:image_name], tag: 'latest', force: true
