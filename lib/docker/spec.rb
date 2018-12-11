@@ -137,7 +137,7 @@ bash -ec '
   cd ../
   sudo chown -R `id -u`:`id -g` root.tar
   cp root.tar "${WD}"
-  touch -t 200001010000.00 $WD/root.tar
+  touch -t 200001010000.00 "{$WD}/root.tar"
   sudo rm -rf $TMPDIR
 '
 EOF
