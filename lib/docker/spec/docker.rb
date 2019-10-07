@@ -1,6 +1,8 @@
 module Docker
   module Spec
     def self.docker_tests
+      @config = DockerSpec.instance.config
+
       describe 'Running a docker container', test: :default do
         before(:all) do
           @container = DockerSpec.instance.container
@@ -31,7 +33,7 @@ module Docker
           end
           expect(@container.logs(stdout: true)).to_not match(/exit/)
         end
-      end
+      end if @config[:standard_tests]
     end
   end
 end

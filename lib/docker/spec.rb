@@ -48,8 +48,6 @@ class DockerSpec
   end
 
   def push
-    @config[:push_container] = get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
-                                          'Push new tag? ')
     if @config[:push_container]
 
       @config[:tag_db] ||
@@ -123,6 +121,11 @@ class DockerSpec
                                        'Clear docker cache? ') if @config[:build_image]
     @config[:tag_db] = get_config(:tag_db, 'DOCKER_SPEC_TAG_DB', 'tag db?')
     @config[:tag_prefix] = get_config(:tag_prefix, 'DOCKER_SPEC_TAG_PREFIX', 'tag prefix?', '')
+    @config[:standard_tests] = get_config(:standard_tests, 'DOCKER_SPEC_STANDARD_TESTS', '', true)
+    @config[:keep_running] = get_config(:keep_running, 'DOCKER_SPEC_KEEP_RUNNING',
+                                                   "\nKeep container running? ")
+    @config[:push_container] = get_config(:push_container, 'DOCKER_SPEC_PUSH_CONTAINER',
+                                          'Push new tag? ')
     @config
   end
 
@@ -167,6 +170,7 @@ EOF
 
   def rspec_configure
     set :backend, :docker
+    $docker_spec_config = @config
 
     RSpec.configure do |rc|
       rc.fail_fast = true
@@ -195,13 +199,15 @@ EOF
 
     opts['env'] = @config[:env] unless @config[:env].nil?
     opts['Image'] = @config[:image_name]
+
     @container = Docker::Container.create(opts).start
+
     Timeout::timeout(10) do
       loop do
         @container.refresh!
         break if @container.info["State"]["Running"]
       end
-    end
+    end if @config[:standard_tests]
 
 
     # Check the logs, when it stops logging we can assume the container
@@ -212,7 +218,8 @@ EOF
       break if log_size_ary.last(3).sort.uniq.size == 1 &&
                log_size_ary.last(3).sort.uniq.last > 0
       sleep 1
-    end
+    end if @config[:standard_tests]
+
     set :docker_container, @container.id
   end
 
@@ -223,9 +230,7 @@ EOF
 
   def clean_up
     # Keep container running
-    @config[:keep_running] = get_config(:keep_running, 'DOCKER_SPEC_KEEP_RUNNING',
-                                                   "\nKeep container running? ")
-    if @config[:keep_running]
+    if @config[:keep_running] && @config[:standard_tests]
       puts "\nINFO: To connect to a running container: \n\n" \
         "docker exec -ti #{@container.info["Name"][1..-1]} bash"
     else
